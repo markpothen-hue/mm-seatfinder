@@ -330,42 +330,66 @@
     var wrap=document.createElement('div'); wrap.className='mapcard';
     var cap=document.createElement('div'); cap.className='mapcap'; cap.textContent='Palazzo Room · The Venetian';
     wrap.appendChild(cap);
-    var svg=el('svg',{viewBox:'0 0 1000 760','aria-label':'Floor plan, your table highlighted'});
-    // room outline
-    svg.appendChild(el('rect',{x:16,y:16,width:968,height:728,rx:10,class:'zone'}));
-    // dance floor (center)
-    svg.appendChild(el('rect',{x:430,y:150,width:150,height:360,rx:6,class:'floor'}));
-    var df=el('text',{x:505,y:335,'text-anchor':'middle',class:'floorlabel','font-size':17,transform:'rotate(-90 505 335)'});
+    var svg=el('svg',{viewBox:'0 0 1040 760','aria-label':'Floor plan of the Palazzo Room with your table highlighted'});
+
+    // ---- room outline ----
+    svg.appendChild(el('rect',{x:22,y:40,width:996,height:698,rx:16,class:'zone'}));
+
+    // ---- clean grid of table positions ----
+    var P={}, R=18, y0=172, dy=62;
+    function col(x,list,start,step){
+      start=start||0; step=step||1;
+      list.forEach(function(t,i){ P[t]=[x, Math.round(y0+(start+i*step)*dy)]; });
+    }
+    // left half (outer wall -> dance floor)
+    col(76,[17,18,19,20,21]);
+    col(154,[16,15,14,13,12,11]);
+    col(232,[5,6,7,8,9,10]);
+    col(310,[4,3,2,1],0.7,1.4);
+    // right half (dance floor -> outer wall)
+    col(614,[27,26,25,24,23,22]);
+    col(692,[28,29,30,31,32,33,34]);
+    col(770,[41,40,39,38,37,36,35]);
+    col(848,[42,43,44,45,46,47,48,49]);
+    col(926,[50,51,52,53,54,55,56,57]);
+    // (tables 58-65 are unused — not drawn)
+
+    // ---- dance floor ----
+    svg.appendChild(el('rect',{x:392,y:150,width:170,height:396,rx:6,class:'floor'}));
+    var df=el('text',{x:477,y:348,'text-anchor':'middle',class:'floorlabel','font-size':17,transform:'rotate(-90 477 348)'});
     df.textContent='Dance Floor'; svg.appendChild(df);
-    // head table / riser (top center)
-    var riserOn = (active==="Head");
-    if(riserOn) svg.appendChild(el('rect',{x:424,y:54,width:162,height:58,rx:9,class:'pulse',style:'opacity:.9;animation:riserping 1.8s ease-out infinite'}));
-    svg.appendChild(el('rect',{x:430,y:60,width:150,height:46,rx:6,class:'riser'+(riserOn?' on':'')}));
-    var rl=el('text',{x:505,y:90,'text-anchor':'middle',class:'riserlabel','font-size':22}); rl.textContent='Mark & Marissa'; svg.appendChild(rl);
-    // zones
+
+    // ---- top-of-room landmarks (evenly spaced, no overlap) ----
     function zone(x,y,w,h,label,fs){
-      svg.appendChild(el('rect',{x:x,y:y,width:w,height:h,rx:4,class:'zone zonefill'}));
-      var t=el('text',{x:x+w/2,y:y+h/2+ (fs||10)/3,'text-anchor':'middle',class:'zlabel','font-size':fs||11});
+      svg.appendChild(el('rect',{x:x,y:y,width:w,height:h,rx:5,class:'zone zonefill'}));
+      var t=el('text',{x:x+w/2,y:y+h/2,'text-anchor':'middle','dominant-baseline':'central',class:'zlabel','font-size':fs||12});
       t.textContent=label; svg.appendChild(t);
     }
-    zone(40,60,120,30,'Bar',12);
-    zone(360,60,60,44,'DJ',11);
-    zone(590,60,60,44,'Band',11);
-    zone(600,60,150,30,'Bar',12);           // right-side bar (top)
-    zone(40,690,150,44,'Cocktail Room',11);
-    // entrance arrows (bottom center)
-    [470,540].forEach(function(x){
-      svg.appendChild(el('path',{d:'M'+x+' 720 l0 -26 M'+(x-7)+' 700 l7 -8 l7 8',stroke:'var(--cream-dim)','stroke-width':1.6,fill:'none'}));
+    zone(76,64,150,32,'Bar',13);
+    zone(300,63,60,34,'DJ',12);
+    zone(590,63,60,34,'Band',12);
+    zone(700,64,175,32,'Bar',13);
+    // head table / riser (burgundy), centered above the dance floor
+    var riserOn = (active==="Head");
+    if(riserOn) svg.appendChild(el('rect',{x:386,y:52,width:182,height:56,rx:9,class:'pulse',style:'opacity:.85;animation:riserping 1.8s ease-out infinite'}));
+    svg.appendChild(el('rect',{x:392,y:58,width:170,height:44,rx:6,class:'riser'+(riserOn?' on':'')}));
+    var rl=el('text',{x:477,y:82,'text-anchor':'middle','dominant-baseline':'central',class:'riserlabel','font-size':22}); rl.textContent='Mark & Marissa'; svg.appendChild(rl);
+
+    // ---- bottom-of-room landmarks ----
+    zone(76,690,160,34,'Cocktail Room',12);
+    [456,500].forEach(function(x){
+      svg.appendChild(el('path',{d:'M'+x+' 706 l0 -24 M'+(x-7)+' 688 l7 -8 l7 8',stroke:'var(--cream-dim)','stroke-width':1.6,fill:'none','stroke-linejoin':'round','stroke-linecap':'round'}));
     });
-    var entxt=el('text',{x:505,y:735,'text-anchor':'middle',class:'zlabel','font-size':10}); entxt.textContent='Entrance'; svg.appendChild(entxt);
-    // tables
-    Object.keys(POS).forEach(function(k){
-      var t=+k, p=POS[k]; if(!p) return;
-      var hasGuests = !!TABLES[k];
+    var entxt=el('text',{x:478,y:722,'text-anchor':'middle',class:'zlabel','font-size':10}); entxt.textContent='Entrance'; svg.appendChild(entxt);
+
+    // ---- tables (only occupied ones) ----
+    Object.keys(P).forEach(function(k){
+      if(!TABLES[k]) return;                 // skip empty/unused tables
+      var t=+k, p=P[k];
       var g=el('g',{class:'tg'+(t===active?' on':'')});
-      if(t===active) g.appendChild(el('circle',{cx:p[0],cy:p[1],r:14,class:'pulse'}));
-      g.appendChild(el('circle',{cx:p[0],cy:p[1],r:15,class:'tcirc',opacity:hasGuests?1:0.4}));
-      var tn=el('text',{x:p[0],y:p[1],class:'tnum2','font-size':13,opacity:hasGuests?1:0.5}); tn.textContent=t;
+      if(t===active) g.appendChild(el('circle',{cx:p[0],cy:p[1],r:R,class:'pulse'}));
+      g.appendChild(el('circle',{cx:p[0],cy:p[1],r:R,class:'tcirc'}));
+      var tn=el('text',{x:p[0],y:p[1],class:'tnum2','font-size':13}); tn.textContent=t;
       g.appendChild(tn);
       svg.appendChild(g);
     });
