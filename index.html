@@ -68,6 +68,9 @@
   }
   .search input::placeholder{color:rgba(236,230,212,.45);font-style:italic;letter-spacing:.06em}
   .search input:focus{border-color:var(--gold-bright)}
+  /* hide native browser clear/decoration for type=search (we draw our own X) */
+  .search input::-webkit-search-cancel-button,
+  .search input::-webkit-search-decoration{ -webkit-appearance:none; appearance:none; display:none; }
   .search .clear{
     position:absolute;right:2px;top:50%;transform:translateY(-50%);
     background:none;border:0;color:var(--cream-dim);font-size:1.4rem;cursor:pointer;
